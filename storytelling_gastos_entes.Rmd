@@ -10,6 +10,7 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
 
 library(tidyverse)
 library(colorspace)
+library(deflateBR)
 
 
 #Matéria sobre gastos com segurança pública pelos municípios
@@ -21,6 +22,13 @@ dados_2016_2025<- tibble(exercicio = 2016:2025, valor=c(7.47, 7.5, 7.83, 8.45, 8
 
 #Esse dado abaixo foi gerado a partir de tratamento do dados disponibilizado no tesouro transparente. Vide projeto COFOG_VPR
 despesa_governo_tidy <- read_csv("despesa_governo_tidy.csv")
+
+#dados de estados gerados a partir de funções do pacote rsifonfi. A geração foi feita no projeto fontesdedados
+
+gastos_estados_2021 <- readRDS("~/Github/seguranca_publica/gastos_estados_2021.rds")
+
+gastos_estados_2025 <- readRDS("~/Github/seguranca_publica/gastos_estados_2025.rds")
+
 
 theme_vpr<- function(paleta_cores){
   
@@ -127,6 +135,29 @@ dados_grafico_seguranca %>%
 ```
 
 ```{r fig.dpi= 300}
+
+dados_grafico_comparacao_estados<-
+  gastos_estados_2021 %>%
+  bind_rows(gastos_estados_2025) %>%
+  filter()
+  summarise(valor = sum(valor),
+            .by = exercicio)
+
+comparacao_gastos_estados<-
+  gastos_estados_2025 %>%
+  filter(coluna == "Despesas Liquidadas") %>%
+  select(uf, valor) %>%
+  bind_rows(
+    gastos_estados_2021 %>%
+      filter(coluna == "Despesas Liquidadas") %>%
+      mutate(valor_2021 = valor) %>%
+      mutate(data_nominal = as.Date(paste0(exercicio+1,"-01-01")) ) %>%
+      mutate(valor_valor = ipca(valor, data_nominal, "12/2025") ) %>%
+      select(uf, valor)    
+  )  
+  
+variacao_anos<- (414541251335	/271735540385)
+
 
 ```
 
