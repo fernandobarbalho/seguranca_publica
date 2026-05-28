@@ -1,0 +1,132 @@
+---
+title: "storytelling_gastos_entes"
+author: "Fernando Almeida Barbalho"
+date: "2026-05-28"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+
+library(tidyverse)
+library(colorspace)
+
+
+#Matéria sobre gastos com segurança pública pelos municípios
+#https://cnm.org.br/comunicacao/noticias/gastos-dos-municipios-com-seguranca-cresceram-66-na-ultima-decada-revela-estudo-da-cnm
+
+#gráfico usando dados da matéria:
+
+dados_2016_2025<- tibble(exercicio = 2016:2025, valor=c(7.47, 7.5, 7.83, 8.45, 8.54,  8.06, 9.7, 10.95, 12.6, 12.4))
+
+#Esse dado abaixo foi gerado a partir de tratamento do dados disponibilizado no tesouro transparente. Vide projeto COFOG_VPR
+despesa_governo_tidy <- read_csv("despesa_governo_tidy.csv")
+
+theme_vpr<- function(paleta_cores){
+  
+  theme_light() +
+    theme(
+      panel.background = element_rect(fill= paleta_cores$cor_fundo_painel),
+      panel.grid = element_blank(),
+      legend.position = "right",
+      legend.background = element_rect(fill= paleta_cores$cor_fundo, color = paleta_cores$cor_fundo),
+      legend.title = element_blank(),
+      legend.text = element_text(size = 8),
+      plot.background = element_rect(fill =paleta_cores$cor_fundo ),
+      plot.title = element_text(size = 14, face = "bold"),
+      plot.subtitle = element_text(size = 12, face = "italic"),
+      text = element_text( colour = paleta_cores$cor_texto),
+      strip.background = element_rect(fill = paleta_cores$cor_fundo  ),
+      strip.text = element_text(size= 8, face ="bold", color = paleta_cores$cor_texto)
+    )  
+  
+  
+}
+
+
+paleta_cores<- list(  cor_fundo= "#D0D0D0", # "#E0E0E0", # # "#F8F8F8",
+                      
+                      cor_fundo_painel = "#F5F5F5",
+                      
+                      cor_fundo_estados = "#696969",
+                      
+                      cor_fundo_mapa_pontos = "#2B2B2B", #"#505050"
+                      
+                      cor_texto = "#324e5a"
+)
+
+```
+
+
+```{r fig.dpi= 300}
+
+dados_2016_2025  %>%
+  ggplot(aes(x= exercicio, y= valor)) +
+  geom_col(aes(fill = valor), show.legend = FALSE) +
+  geom_smooth() +
+  geom_text(aes(label = scales::number(valor, accuracy = 0.1, decimal.mark = ",")),
+            vjust =-1,
+            color =paleta_cores$cor_texto,
+            fontface = "bold") +
+  scale_fill_continuous_sequential(palette = "Heat 2") +
+  scale_x_continuous(breaks = 2016:2025) +
+  theme_vpr(paleta_cores = paleta_cores) +
+  theme(
+    axis.text.y= element_blank(),
+    axis.title = element_blank()
+  ) +
+  labs(
+    title = "Gastos de municípios em segurança pública",
+    subtitle = "Valores aumentam substancialmente a partir de 2022. (valores em R$ bi)"
+  )
+
+```
+
+```{r fig.dpi= 300}
+
+dados_base_seguranca<-
+  despesa_governo_tidy %>%
+  filter(tipo_despesa == "Ordem pública e segurança")
+
+dados_total_seguranca<-
+  dados_base_seguranca %>%
+  filter(!esfera_governo %in% c("Governo Geral", "Coluna de Consolidação") ) %>%
+  summarise(total_seguranca_ano = sum(valor_despesa),
+            .by = ano)
+
+dados_grafico_seguranca<-
+  dados_base_seguranca %>%
+  filter(!esfera_governo %in% c("Governo Geral", "Coluna de Consolidação") ) %>%
+  inner_join(dados_total_seguranca) %>%
+  mutate(participacao = valor_despesa/total_seguranca_ano) %>%
+  mutate(esfera_governo = factor(esfera_governo, levels = c("Governos Municipais", "Governos Estaduais","Governo Central"  )))
+
+
+dados_grafico_seguranca %>%
+  ggplot(aes(x=ano, y=participacao) ) +
+  geom_col(aes(fill= esfera_governo)) +
+  geom_text(aes(label = scales::percent(participacao, accuracy = 0.1, decimal.mark = ",")),
+            size = 3,
+            position =  "stack",
+            vjust= 1,
+            color= "white",
+            fontface = "bold") +
+  scale_x_continuous(breaks = 2010:2024) +
+  theme_vpr(paleta_cores = paleta_cores) +
+  theme(
+    legend.position = "bottom",
+    axis.title = element_blank(),
+    axis.text.y = element_blank()
+  ) +
+  labs(
+    title = "Participação das esferas de governo na despesa com segurança pública",
+    subtitle = "Valores relativos ao gasto do governo geral sem ajustes de consolidação",
+    caption = "Fonte: STN/COFOG. Elaboração: VPR/DIESO"
+  )
+
+```
+
+```{r fig.dpi= 300}
+
+```
+
