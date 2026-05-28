@@ -11,6 +11,7 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
 library(tidyverse)
 library(colorspace)
 library(deflateBR)
+library(ggbeeswarm)
 
 
 #Matéria sobre gastos com segurança pública pelos municípios
@@ -29,6 +30,24 @@ gastos_estados_2021 <- readRDS("~/Github/seguranca_publica/gastos_estados_2021.r
 
 gastos_estados_2025 <- readRDS("~/Github/seguranca_publica/gastos_estados_2025.rds")
 
+finbra_2021 <- 
+  read_delim("finbra_2021.csv", 
+             delim = ";", escape_double = FALSE, locale = locale(decimal_mark = ",", 
+                                                                 grouping_mark = ".", encoding = "latin1"), 
+             trim_ws = TRUE, skip = 3) %>%
+  janitor::clean_names()
+
+
+
+finbra_2025 <- 
+  read_delim("finbra_2025.csv", 
+             delim = ";", escape_double = FALSE, locale = locale(decimal_mark = ",", 
+                                                                 grouping_mark = ".", encoding = "latin1"), 
+             trim_ws = TRUE, skip = 3)%>%
+  janitor::clean_names()
+
+num_indice_dez_2021 <- 6120.04
+num_indice_dez_2025 <- 7403.29
 
 theme_vpr<- function(paleta_cores){
   
@@ -154,13 +173,14 @@ dados_grafico_comparacao_estados<-
   mutate(uf = reorder(uf, variacao_despesa_seg_publica))
 
 media_variacao_anos<- mean(dados_grafico_comparacao_estados$variacao_despesa_seg_publica)
+variacao_maxima<- max(dados_grafico_comparacao_estados$variacao_despesa_seg_publica)
 
 
 dados_grafico_comparacao_estados %>%
   ggplot(aes(x= variacao_despesa_seg_publica, y= uf)) +
   geom_col(aes(fill= variacao_despesa_seg_publica), show.legend = FALSE) +
   geom_vline(xintercept = media_variacao_anos, linetype = "dashed", size = 1) +
-  geom_text(aes(label = scales::percent(variacao_despesa_seg_publica, accuracy = 0.1, decimal.mark = ",")),
+  geom_text(aes(label = scales::percent(variacao_despesa_seg_publica, accuracy = 1.0, decimal.mark = ",")),
             hjust = -0.05,
             color = paleta_cores$cor_texto,
             size =3) +
@@ -188,9 +208,74 @@ dados_grafico_comparacao_estados %>%
     caption = "Fonte: STN/SICONFI. Elaboração: VPR/DIESO"
   )
 
+```
+
+```{r fig.dpi= 300}
+
+participacao_seg_publica<-
+finbra_2021 %>%
+  filter(conta %in% c("06 - Segurança Pública", "Despesas Exceto Intraorçamentárias" ),
+         coluna == "Despesas Liquidadas")%>%
+  summarise(total = sum(valor),
+            .by = conta) %>%
+  pivot_wider(names_from = conta,
+              values_from = total) %>%
+  mutate(part_seg_pub = `06 - Segurança Pública`/`Despesas Exceto Intraorçamentárias`)
+
+
+part_min<- (participacao_seg_publica$part_seg_pub)*0.10
+
+
+participacao_municipios<-
+  finbra_2021 %>%
+  filter(conta %in% c("06 - Segurança Pública", "Despesas Exceto Intraorçamentárias" ),
+         coluna == "Despesas Liquidadas")%>%
+  summarise(total = sum(valor),
+            .by = c(instituicao,conta)) %>%
+  pivot_wider(names_from = conta,
+              values_from = total) %>%
+  filter(!is.na(`06 - Segurança Pública`)) %>%
+  mutate(part_seg_pub = `06 - Segurança Pública`/`Despesas Exceto Intraorçamentárias`)
+
+
+quantile(participacao_municipios$part_seg_pub)*100
+quantile(participacao_municipios$part_seg_pub, probs = 0.1)*100
+
+municipios_excluidos<-
+participacao_municipios  %>%
+  filter(`06 - Segurança Pública` <100000) %>%
+  filter(part_seg_pub <part_min ) 
 
 
 
+dados_grafico_variacao_municipios<-
+
+  finbra_2021 %>%
+  filter(conta == "06 - Segurança Pública",
+         coluna == "Despesas Liquidadas") %>%
+  mutate(valor_2021 = valor) %>%
+  select(instituicao, cod_ibge, valor_2021) %>%
+  inner_join(
+    finbra_2025 %>%
+      filter(conta == "06 - Segurança Pública",
+             coluna == "Despesas Liquidadas") %>%
+      mutate(valor_2025 = valor)%>%
+      select(instituicao,cod_ibge, valor_2025,populacao)
+  ) %>%
+  mutate(valor_2021_corrigido_2025 = valor_2021 * ((num_indice_dez_2025/num_indice_dez_2021)),
+         variacao_perc = ((valor_2025/valor_2021_corrigido_2025)-1))  %>%
+  filter(!instituicao %in% municipios_excluidos$instituicao  )
+
+quantile()
+
+dados_grafico_variacao_municipios %>%
+  mutate(categoria= "Municípios") %>%
+  ggplot(aes(x= categoria, y= variacao_perc)) +
+  geom_quasirandom( pch = 21, fill= paleta_cores$cor_texto, color= paleta_cores$cor_fundo_painel) +
+  scale_y_log10(labels= scales::percent_format(accuracy = 1.0)) +
+  theme_vpr(paleta_cores = paleta_cores)
+  
+###Destacar número de municípios em 2021 e em 2025 (pode ser um inset chart)
 
 ```
 
