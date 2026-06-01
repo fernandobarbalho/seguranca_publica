@@ -111,50 +111,54 @@ dados_2016_2025  %>%
 ```
 
 ```{r fig.dpi= 300}
-
-dados_base_seguranca<-
-  despesa_governo_tidy %>%
-  filter(tipo_despesa == "Ordem pública e segurança")
-
-dados_total_seguranca<-
-  dados_base_seguranca %>%
-  filter(!esfera_governo %in% c("Governo Geral", "Coluna de Consolidação") ) %>%
-  summarise(total_seguranca_ano = sum(valor_despesa),
-            .by = ano)
-
-dados_grafico_seguranca<-
-  dados_base_seguranca %>%
-  filter(!esfera_governo %in% c("Governo Geral", "Coluna de Consolidação") ) %>%
-  inner_join(dados_total_seguranca) %>%
-  mutate(participacao = valor_despesa/total_seguranca_ano) %>%
-  mutate(esfera_governo = factor(esfera_governo, levels = c("Governos Municipais", "Governos Estaduais","Governo Central"  )))
-
-
-dados_grafico_seguranca %>%
-  ggplot(aes(x=ano, y=participacao) ) +
-  geom_col(aes(fill= esfera_governo)) +
-  geom_text(aes(label = scales::percent(participacao, accuracy = 0.1, decimal.mark = ",")),
-            size = 3,
-            position =  "stack",
-            vjust= 1,
-            color= "white",
-            fontface = "bold") +
-  scale_x_continuous(breaks = 2010:2024) +
-  theme_vpr(paleta_cores = paleta_cores) +
-  theme(
-    legend.position = "bottom",
-    axis.title = element_blank(),
-    axis.text.y = element_blank()
-  ) +
-  labs(
-    title = "Participação das esferas de governo na despesa com segurança pública",
-    subtitle = "Valores relativos ao gasto do governo geral sem ajustes de consolidação",
-    caption = "Fonte: STN/COFOG. Elaboração: VPR/DIESO"
-  )
+# 
+# dados_base_seguranca<-
+#   despesa_governo_tidy %>%
+#   filter(tipo_despesa == "Ordem pública e segurança")
+# 
+# dados_total_seguranca<-
+#   dados_base_seguranca %>%
+#   filter(!esfera_governo %in% c("Governo Geral", "Coluna de Consolidação") ) %>%
+#   summarise(total_seguranca_ano = sum(valor_despesa),
+#             .by = ano)
+# 
+# dados_grafico_seguranca<-
+#   dados_base_seguranca %>%
+#   filter(!esfera_governo %in% c("Governo Geral", "Coluna de Consolidação") ) %>%
+#   inner_join(dados_total_seguranca) %>%
+#   mutate(participacao = valor_despesa/total_seguranca_ano) %>%
+#   mutate(esfera_governo = factor(esfera_governo, levels = c("Governos Municipais", "Governos Estaduais","Governo Central"  )))
+# 
+# 
+# dados_grafico_seguranca %>%
+#   ggplot(aes(x=ano, y=participacao) ) +
+#   geom_col(aes(fill= esfera_governo)) +
+#   geom_text(aes(label = scales::percent(participacao, accuracy = 0.1, decimal.mark = ",")),
+#             size = 3,
+#             position =  "stack",
+#             vjust= 1,
+#             color= "white",
+#             fontface = "bold") +
+#   scale_x_continuous(breaks = 2010:2024) +
+#   theme_vpr(paleta_cores = paleta_cores) +
+#   theme(
+#     legend.position = "bottom",
+#     axis.title = element_blank(),
+#     axis.text.y = element_blank()
+#   ) +
+#   labs(
+#     title = "Participação das esferas de governo na despesa com segurança pública",
+#     subtitle = "Valores relativos ao gasto do governo geral sem ajustes de consolidação",
+#     caption = "Fonte: STN/COFOG. Elaboração: VPR/DIESO"
+#   )
 
 ```
 
 ```{r fig.dpi= 300}
+
+#Dados da STN (COFOG) indicam que em 2024 a segurança pública representou 17% dos gastos dos estados, 2% dos gastos da União e 1% dos gastos dos municípios
+
+
 
 dados_grafico_comparacao_estados<-
   gastos_estados_2025 %>%
@@ -196,7 +200,7 @@ dados_grafico_comparacao_estados %>%
             vjust = 1,
             color = paleta_cores$cor_texto) +
   scale_fill_continuous_sequential(palette= "Heat 2") +
-  scale_x_continuous(expand = expansion(mult = c(0.01, 0.06)), breaks = media_variacao_anos, labels = scales::percent_format(accuracy = 0.1, decimal.mark = ",")) +
+  scale_x_continuous(expand = expansion(mult = c(0.01, 0.06)), breaks = media_variacao_anos, labels = scales::percent_format(accuracy = 1.0, decimal.mark = ",")) +
   theme_vpr(paleta_cores = paleta_cores) +
   theme(
     axis.title = element_blank(),
@@ -212,40 +216,98 @@ dados_grafico_comparacao_estados %>%
 
 ```{r fig.dpi= 300}
 
-participacao_seg_publica<-
-finbra_2021 %>%
-  filter(conta %in% c("06 - Segurança Pública", "Despesas Exceto Intraorçamentárias" ),
-         coluna == "Despesas Liquidadas")%>%
-  summarise(total = sum(valor),
-            .by = conta) %>%
-  pivot_wider(names_from = conta,
-              values_from = total) %>%
-  mutate(part_seg_pub = `06 - Segurança Pública`/`Despesas Exceto Intraorçamentárias`)
+# participacao_seg_publica<-
+# finbra_2021 %>%
+#   filter(conta %in% c("06 - Segurança Pública", "Despesas Exceto Intraorçamentárias" ),
+#          coluna == "Despesas Liquidadas")%>%
+#   summarise(total = sum(valor),
+#             .by = conta) %>%
+#   pivot_wider(names_from = conta,
+#               values_from = total) %>%
+#   mutate(part_seg_pub = `06 - Segurança Pública`/`Despesas Exceto Intraorçamentárias`)
+# 
+# 
+# part_min<- (participacao_seg_publica$part_seg_pub)*0.10
+# 
+# 
+# participacao_municipios<-
+#   finbra_2021 %>%
+#   filter(conta %in% c("06 - Segurança Pública", "Despesas Exceto Intraorçamentárias" ),
+#          coluna == "Despesas Liquidadas")%>%
+#   summarise(total = sum(valor),
+#             .by = c(instituicao,conta)) %>%
+#   pivot_wider(names_from = conta,
+#               values_from = total) %>%
+#   filter(!is.na(`06 - Segurança Pública`)) %>%
+#   mutate(part_seg_pub = `06 - Segurança Pública`/`Despesas Exceto Intraorçamentárias`)
+# 
+# 
+# quantile(participacao_municipios$part_seg_pub)*100
+# quantile(participacao_municipios$part_seg_pub, probs = 0.1)*100
+# 
+# municipios_excluidos<-
+# participacao_municipios  %>%
+#   filter(`06 - Segurança Pública` <100000) %>%
+#   filter(part_seg_pub <part_min ) 
+# 
+# 
+# 
+# dados_grafico_variacao_municipios<-
+# 
+#   finbra_2021 %>%
+#   filter(conta == "06 - Segurança Pública",
+#          coluna == "Despesas Liquidadas") %>%
+#   mutate(valor_2021 = valor) %>%
+#   select(instituicao, cod_ibge, valor_2021) %>%
+#   inner_join(
+#     finbra_2025 %>%
+#       filter(conta == "06 - Segurança Pública",
+#              coluna == "Despesas Liquidadas") %>%
+#       mutate(valor_2025 = valor)%>%
+#       select(instituicao,cod_ibge, valor_2025,populacao)
+#   ) %>%
+#   mutate(valor_2021_corrigido_2025 = valor_2021 * ((num_indice_dez_2025/num_indice_dez_2021)),
+#          variacao_perc = ((valor_2025/valor_2021_corrigido_2025)-1))  #%>%
+#   #filter(!instituicao %in% municipios_excluidos$instituicao  )
+# 
+# 
+# 
+# dados_grafico_variacao_municipios %>%
+#   mutate(categoria= "Municípios") %>%
+#   ggplot(aes(x= categoria, y= variacao_perc)) +
+#   geom_quasirandom( pch = 21, fill= paleta_cores$cor_texto, color= paleta_cores$cor_fundo_painel) +
+#   scale_y_log10(labels= scales::percent_format(accuracy = 1.0)) +
+#   theme_vpr(paleta_cores = paleta_cores)
+  
+###Destacar número de municípios em 2021 e em 2025 (pode ser um inset chart)
+
+```
+
+```{r fig.dpi= 300}
 
 
-part_min<- (participacao_seg_publica$part_seg_pub)*0.10
+quantidade_municipios_2021 <-NROW( finbra_2021 %>%
+  filter(conta == "06 - Segurança Pública",
+         coluna == "Despesas Liquidadas") )
 
 
-participacao_municipios<-
-  finbra_2021 %>%
-  filter(conta %in% c("06 - Segurança Pública", "Despesas Exceto Intraorçamentárias" ),
-         coluna == "Despesas Liquidadas")%>%
-  summarise(total = sum(valor),
-            .by = c(instituicao,conta)) %>%
-  pivot_wider(names_from = conta,
-              values_from = total) %>%
-  filter(!is.na(`06 - Segurança Pública`)) %>%
-  mutate(part_seg_pub = `06 - Segurança Pública`/`Despesas Exceto Intraorçamentárias`)
+quantidade_municipios_2025 <-NROW( finbra_2025 %>%
+  filter(conta == "06 - Segurança Pública",
+         coluna == "Despesas Liquidadas") )
 
 
-quantile(participacao_municipios$part_seg_pub)*100
-quantile(participacao_municipios$part_seg_pub, probs = 0.1)*100
-
-municipios_excluidos<-
-participacao_municipios  %>%
-  filter(`06 - Segurança Pública` <100000) %>%
-  filter(part_seg_pub <part_min ) 
-
+quantidade_municipios_2021_e_2025<- NROW(finbra_2021 %>%
+  filter(conta == "06 - Segurança Pública",
+         coluna == "Despesas Liquidadas") %>%
+  mutate(valor_2021 = valor) %>%
+  select(instituicao, cod_ibge, valor_2021) %>%
+  inner_join(
+    finbra_2025 %>%
+      filter(conta == "06 - Segurança Pública",
+             coluna == "Despesas Liquidadas") %>%
+      mutate(valor_2025 = valor)%>%
+      select(instituicao,cod_ibge, valor_2025,populacao)
+  ))
 
 
 dados_grafico_variacao_municipios<-
@@ -263,19 +325,126 @@ dados_grafico_variacao_municipios<-
       select(instituicao,cod_ibge, valor_2025,populacao)
   ) %>%
   mutate(valor_2021_corrigido_2025 = valor_2021 * ((num_indice_dez_2025/num_indice_dez_2021)),
-         variacao_perc = ((valor_2025/valor_2021_corrigido_2025)-1))  %>%
-  filter(!instituicao %in% municipios_excluidos$instituicao  )
-
-quantile()
+         variacao_perc = ((valor_2025/valor_2021_corrigido_2025)-1)) %>%
+  mutate(
+    faixa_populacao = case_when(
+      populacao <= 5000 ~ "Até 5 mil habitantes",
+      populacao <= 10000 ~ "5.001 a 10 mil habitantes",
+      populacao <= 20000 ~ "10.001 a 20 mil habitantes",
+      populacao <= 50000 ~ "20.001 a 50 mil habitantes",
+      populacao <= 100000 ~ "50.001 a 100 mil habitantes",
+      populacao <= 500000 ~ "100.001 a 500 mil habitantes",
+      populacao > 500000 ~ "Mais de 500 mil habitantes",
+      TRUE ~ NA_character_
+    )
+  ) %>%
+  mutate(faixa_populacao =  factor(faixa_populacao, levels = c("Até 5 mil habitantes", "5.001 a 10 mil habitantes","10.001 a 20 mil habitantes","20.001 a 50 mil habitantes","50.001 a 100 mil habitantes",  "100.001 a 500 mil habitantes", "Mais de 500 mil habitantes" ))) %>%
+  mutate(faixa_variacao = case_when(
+    variacao_perc <0 ~"<0%",
+    between(variacao_perc,0,media_variacao_anos) ~ paste0("[0%,36%]" ) ,
+    between(variacao_perc,media_variacao_anos,1) ~ paste0("]36%, 100%]" ) ,
+    variacao_perc > 1 ~ paste0(">100%")
+  )) %>%
+  group_by(faixa_populacao, faixa_variacao) %>%
+  summarise(quantidade = n()) %>%
+  mutate(faixa_variacao =factor(faixa_variacao, levels = c("<0%","[0%,36%]","]36%, 100%]", ">100%"  )))  
 
 dados_grafico_variacao_municipios %>%
-  mutate(categoria= "Municípios") %>%
-  ggplot(aes(x= categoria, y= variacao_perc)) +
-  geom_quasirandom( pch = 21, fill= paleta_cores$cor_texto, color= paleta_cores$cor_fundo_painel) +
-  scale_y_log10(labels= scales::percent_format(accuracy = 1.0)) +
-  theme_vpr(paleta_cores = paleta_cores)
-  
-###Destacar número de municípios em 2021 e em 2025 (pode ser um inset chart)
+  ggplot(aes(y= quantidade, x= faixa_variacao)) +
+  geom_col(aes(fill = quantidade), show.legend = FALSE) +
+  geom_text(aes(label = quantidade), vjust=1, size = 3, color = paleta_cores$cor_texto, fontface = "bold")+
+  labs(
+    x= "Faixas de variação",
+    y= "Quantidade de municípios",
+    title = "Distribuição da variação de gastos em segurança pública",
+    subtitle  = "Variações entre 2021 e 2025 detalhadas por faixa de população e faixa de variação",
+    caption = "Dados de 2224 municípios que registraram gastos em 2021 e 2025. Fonte STN/SICONFI. Elaboração: VPR/DIESO"
+  )+
+  scale_fill_continuous_sequential(palette = "Heat 2") +
+  theme_vpr(paleta_cores = paleta_cores) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust=1, vjust=1),
+    axis.text.y = element_blank()
+  )+
+  facet_wrap(faixa_populacao~., scales= "free_y")
+
+
+
+```
+
+```{r fig.dpi= 300}
+
+participacao_seg_publica<-
+  finbra_2025 %>%
+  filter(conta %in% c("06 - Segurança Pública", "Despesas Exceto Intraorçamentárias", "Despesas Intraorçamentárias" ),
+         coluna == "Despesas Liquidadas")%>%
+  mutate(conta = ifelse(conta == "06 - Segurança Pública", "06 - Segurança Pública", "Total Despesa")) %>%
+  summarise(total = sum(valor),
+            populacao = mean(populacao),
+            .by = c(instituicao, conta)) %>%
+  pivot_wider(names_from = conta,
+              values_from = total) %>%
+  mutate(part_seg_pub = `06 - Segurança Pública`/`Total Despesa`,
+         part_seg_pub = ifelse(is.na(part_seg_pub),0, part_seg_pub))
+
+
+quantis<- quantile(participacao_seg_publica$part_seg_pub)
+
+dados_grafico_participacao_seg_publica<-
+  participacao_seg_publica %>%
+  mutate(
+    faixa_populacao = case_when(
+      populacao <= 5000 ~ "Até 5 mil habitantes",
+      populacao <= 10000 ~ "5.001 a 10 mil habitantes",
+      populacao <= 20000 ~ "10.001 a 20 mil habitantes",
+      populacao <= 50000 ~ "20.001 a 50 mil habitantes",
+      populacao <= 100000 ~ "50.001 a 100 mil habitantes",
+      populacao <= 500000 ~ "100.001 a 500 mil habitantes",
+      populacao > 500000 ~ "Mais de 500 mil habitantes",
+      TRUE ~ NA_character_
+    )
+  ) %>%
+  mutate(faixa_populacao =  factor(faixa_populacao, levels = c("Até 5 mil habitantes", "5.001 a 10 mil habitantes","10.001 a 20 mil habitantes","20.001 a 50 mil habitantes","50.001 a 100 mil habitantes",  "100.001 a 500 mil habitantes", "Mais de 500 mil habitantes" ))) %>%
+  mutate(faixa_participacao =case_when(
+    part_seg_pub == 0 ~ "0%",
+    between(part_seg_pub, 0, quantis[3]) ~"]0%, 0,025%]",
+    between(part_seg_pub, quantis[3], quantis[4]) ~"]0,025%, 0,034%]",
+    part_seg_pub > quantis[4] ~ ">0,034%"
+    
+  )) %>%
+  mutate(faixa_participacao = factor(faixa_participacao, levels = c("0%","]0%, 0,025%]","]0,025%, 0,034%]",">0,034%")) ) %>%
+  group_by(faixa_populacao, faixa_participacao) %>%
+  summarise(quantidade = n()) 
+
+
+dados_grafico_participacao_seg_publica%>%
+  ggplot(aes(y= quantidade, x= faixa_participacao)) +
+  geom_col(aes(fill = quantidade), show.legend = FALSE) +
+  geom_text(aes(label = quantidade, 
+            vjust= case_when(
+              quantidade<8 & faixa_populacao == "Mais de 500 mil habitantes" ~ -1,
+              quantidade>8 & faixa_populacao == "Mais de 500 mil habitantes" ~ 1,
+              quantidade < 60 ~ -1,
+              TRUE ~ 1
+            )), 
+            size = 3, 
+            color = paleta_cores$cor_texto, 
+            fontface = "bold")+
+  labs(
+    x= "Faixas de participação",
+    y= "Quantidade de municípios",
+    title = "Distribuição da participação de gastos em segurança pública em 2025",
+    subtitle  = "Participações detalhadas por faixa de população e faixa de participação",
+    caption = "Fonte STN/SICONFI. Elaboração: VPR/DIESO"
+  )+
+  scale_fill_continuous_sequential(palette = "Heat 2") +
+  theme_vpr(paleta_cores = paleta_cores) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust=1, vjust=1),
+    axis.text.y = element_blank()
+  )+
+  facet_wrap(faixa_populacao~., scales= "free_y")
+
 
 ```
 
