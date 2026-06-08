@@ -49,6 +49,22 @@ finbra_2025 <-
 num_indice_dez_2021 <- 6120.04
 num_indice_dez_2025 <- 7403.29
 
+base_dados_variacao_municipios<-
+  finbra_2021 %>%
+  filter(conta == "06 - Segurança Pública",
+         coluna == "Despesas Liquidadas") %>%
+  mutate(valor_2021 = valor) %>%
+  select(instituicao, cod_ibge, valor_2021) %>%
+  inner_join(
+    finbra_2025 %>%
+      filter(conta == "06 - Segurança Pública",
+             coluna == "Despesas Liquidadas") %>%
+      mutate(valor_2025 = valor)%>%
+      select(instituicao,cod_ibge, valor_2025,populacao)
+  ) %>%
+  mutate(valor_2021_corrigido_2025 = valor_2021 * ((num_indice_dez_2025/num_indice_dez_2021)),
+         variacao_perc = ((valor_2025/valor_2021_corrigido_2025)-1))
+
 theme_vpr<- function(paleta_cores){
   
   theme_light() +
@@ -312,18 +328,7 @@ quantidade_municipios_2021_e_2025<- NROW(finbra_2021 %>%
 
 dados_grafico_variacao_municipios<-
 
-  finbra_2021 %>%
-  filter(conta == "06 - Segurança Pública",
-         coluna == "Despesas Liquidadas") %>%
-  mutate(valor_2021 = valor) %>%
-  select(instituicao, cod_ibge, valor_2021) %>%
-  inner_join(
-    finbra_2025 %>%
-      filter(conta == "06 - Segurança Pública",
-             coluna == "Despesas Liquidadas") %>%
-      mutate(valor_2025 = valor)%>%
-      select(instituicao,cod_ibge, valor_2025,populacao)
-  ) %>%
+base_dados_variacao_municipios %>%
   mutate(valor_2021_corrigido_2025 = valor_2021 * ((num_indice_dez_2025/num_indice_dez_2021)),
          variacao_perc = ((valor_2025/valor_2021_corrigido_2025)-1)) %>%
   mutate(
@@ -445,6 +450,23 @@ dados_grafico_participacao_seg_publica%>%
   )+
   facet_wrap(faixa_populacao~., scales= "free_y")
 
+
+```
+
+```{r}
+
+dados_grafico_dispersao<-
+  base_dados_variacao_municipios
+
+
+dados_grafico_dispersao %>%
+  ggplot(aes(x= populacao, y= variacao_perc)) +
+  geom_point()+
+  scale_x_log10()+
+  scale_y_log10()
+
+cor.test(dados_grafico_dispersao$populacao, dados_grafico_dispersao$variacao_perc)
+cor.test(log(dados_grafico_dispersao$populacao), log(dados_grafico_dispersao$variacao_perc))
 
 ```
 
